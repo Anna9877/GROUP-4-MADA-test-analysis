@@ -30,6 +30,11 @@ Load needed packages. Instead of having R commands here, this just pulls in the 
 
 
 ```{r, packages, message = FALSE, warning = FALSE}
+library(readxl) #for loading Excel files
+library(dplyr) #for data processing/cleaning
+library(tidyr) #for data processing/cleaning
+library(skimr) #for nice visualization of data 
+library(here) #to set paths
 ```
 
 
@@ -40,6 +45,8 @@ package::function() that's not required one could just call the function specify
 but it adds typing. You can do it either way.
 
 ```{r, loaddata}
+data_location <- here::here("data", "raw_data", "exampledata2.xlsx")
+rawdata <- readxl::read_excel(data_location)
 ```
 
 
@@ -59,7 +66,7 @@ Looks like we have the following data:
 * height (seems like it's in centimeters) 
 * weight (seems to be in kilogram)
 * Sex
-
+* Handedness (right, left, and both)
 
 # Cleaning
 
@@ -70,11 +77,23 @@ Does that mean it should be a numeric 60? It somehow doesn't make sense since th
 Since we don't know how to fix this, we might decide to remove the person. This "sixty" entry also turned all Height entries into characters instead of numeric. That conversion to character also means that our summary function isn't very meaningful. So let's fix that first.
 
 ```{r, cleandata1}
+d1 <- rawdata %>% dplyr::filter( Height != "sixty" ) %>% 
+                  dplyr::mutate(Height = as.numeric(Height))
+
+
+# look at partially fixed data again
+skimr::skim(d1)
+hist(d1$Height)
+
 ```
 
 Now we see that there is one person with a height of 6. That could be a typo, or someone mistakenly entered their height in feet. Since we unfortunately don't know, we might need to remove this person, which we'll do here.
 
 ```{r, cleandata2}
+d2 <- d1 %>% dplyr::filter(Height != 6)
+
+#height values seem ok now
+skimr::skim(d2)
 ```
 
 Height values seem ok now.
@@ -86,11 +105,15 @@ Note that removing anyone who had "faulty" or missing data is one approach. It's
 
 
 ```{r, cleandata3}
+d3 <- d2 %>%  dplyr::filter(Weight != 7000) %>% tidyr::drop_na()
+skimr::skim(d3)
 ```
 
 Now checking the `Sex` variable. Sex should be a categorical/factor variable but is loaded as character. We can fix that with simple base R code to mix things up.
 
 ```{r, cleandata4}
+d3$Sex <- as.factor(d3$Sex)  
+skimr::skim(d3)
 ```
 
 
@@ -98,6 +121,8 @@ Now we see that there is another NA, but it's not `NA` from R, instead it was lo
 Well proceed here by removing that individual with that NA entry. Since this keeps an empty category for Sex, I'm also using droplevels() to get rid of it.
 
 ```{r, cleandata5}
+d4 <- d3 %>% dplyr::filter(Sex != "NA") %>% droplevels()
+skimr::skim(d4)
 ```
 
 
@@ -114,6 +139,10 @@ See here for some suggestions on how to store your processed data:
 http://www.sthda.com/english/wiki/saving-data-into-r-data-format-rds-and-rdata
 
 ```{r, savedata}
+processeddata <- d4
+# location to save file
+save_data_location <- here::here("data","processed_data","processeddata.rds")
+saveRDS(processeddata, file = save_data_location)
 ```
 
 
