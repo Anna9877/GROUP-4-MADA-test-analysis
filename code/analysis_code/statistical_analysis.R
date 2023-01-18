@@ -8,6 +8,7 @@
 library(ggplot2) #for plotting
 library(broom) #for cleaning up output from lm()
 library(here) #for data loading/saving
+library(dplyr) 
 
 #path to data
 #note the use of the here() package and not absolute paths
@@ -15,6 +16,22 @@ data_location <- here::here("data","processed_data","processeddata.rds")
 
 #load data. 
 mydata <- readRDS(data_location)
+
+# Data exploration through figures
+#Creating a boxplot
+p1 <- mydata %>% ggplot(aes(x=Handedness, y=Height)) + geom_boxplot() 
+plot(p1)
+
+figure_file = here("results","boxplot_handedness_and_height.png")
+ggsave(filename = figure_file, plot=p1) 
+
+#Creating a scatterplot
+p2 <- mydata %>% ggplot(aes(x=Weight, y=Age)) + geom_point() 
+plot(p2)
+
+figure_file = here("results","scatterplot_weight_and_age.png")
+ggsave(filename = figure_file, plot=p2) 
+
 
 
 ######################################
